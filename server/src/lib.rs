@@ -1,5 +1,5 @@
 pub mod client;
-mod generated;
+mod opts;
 pub mod server;
 #[cfg(test)]
 mod tests;

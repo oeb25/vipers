@@ -9,7 +9,7 @@ use tokio_stream::{wrappers::LinesStream, StreamExt};
 use tokio_util::io::StreamReader;
 
 use crate::{
-    generated::{CarbonOpts, CarbonOptsBuilder, SiliconOpts, SiliconOptsBuilder},
+    opts::{CarbonOpts, CarbonOptsBuilder, SiliconOpts, SiliconOptsBuilder},
     server::ViperServer,
     verification::VerificationStatus,
 };

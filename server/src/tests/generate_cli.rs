@@ -26,7 +26,10 @@ fn generate_cli() -> Result<()> {
     let carbon_help = compile_and_run_help(&carbon_path, "carbon.jar", "CarbonOpts")?;
     let silicon_help = compile_and_run_help(&silicon_path, "silicon.jar", "SiliconOpts")?;
 
-    let output_path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated.rs"));
+    let output_path = PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/opts/generated.rs"
+    ));
 
     let mut output = File::create(&output_path)?;
 

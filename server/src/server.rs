@@ -7,7 +7,7 @@ use tokio::{
     process::{Child, Command},
 };
 
-use crate::generated::{ViperServerOpts, ViperServerOptsBuilder};
+use crate::opts::{ViperServerOpts, ViperServerOptsBuilder};
 
 #[derive(
     Debug, Display, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,

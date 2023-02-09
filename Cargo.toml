@@ -1,3 +1,4 @@
+[workspace.package]
 authors = ["Oliver Bøving <oliver@bvng.dk>"]
 
 [workspace]
