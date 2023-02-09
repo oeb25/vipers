@@ -10,6 +10,9 @@ async fn basic_test() -> color_eyre::Result<()> {
 
     color_eyre::install()?;
 
+    #[cfg(feature = "bundle-viperserver")]
+    let viperserver = crate::bundled::ViperServerJar::create()?;
+    #[cfg(not(feature = "bundle-viperserver"))]
     let viperserver = {
         let viperserver_path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/viperserver/"));
         let target_path = fs::read_dir(viperserver_path.join("target/"))?
@@ -20,11 +23,13 @@ async fn basic_test() -> color_eyre::Result<()> {
         target_path.join("viperserver.jar")
     };
 
+    eprintln!("Using viperserver at {viperserver:?}");
+
     let s = server::ViperServer::builder()
         .log_file("test-viper.log")
         .cache_file("test-viper.cache")
         .log_level("ALL")
-        .spawn_http(viperserver)
+        .spawn_http(&viperserver)
         .await?;
 
     let mut client = client::Client::new(s).await?;

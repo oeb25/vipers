@@ -1,3 +1,5 @@
+#[cfg(feature = "bundle-viperserver")]
+mod bundled;
 pub mod client;
 mod opts;
 pub mod server;
