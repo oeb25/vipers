@@ -1,0 +1,4 @@
+authors = ["Oliver Bøving <oliver@bvng.dk>"]
+
+[workspace]
+members = ["server"]
