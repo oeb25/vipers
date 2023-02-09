@@ -27,14 +27,12 @@ async fn basic_test() -> color_eyre::Result<()> {
         .spawn_http(viperserver)
         .await?;
 
-    let z3 = String::from_utf8(Command::new("which").arg("z3").output()?.stdout)?;
-
     let mut client = client::Client::new(s).await?;
 
     let res = client
         .post(
             client::VerificationRequest::silicon()
-                .z3_exe(z3)
+                .detect_z3()?
                 .verify_file(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/src/tests/sample-programs/fib_rec.vpr"

@@ -11,8 +11,9 @@ use tokio_util::io::StreamReader;
 use crate::{
     opts::{CarbonOpts, CarbonOptsBuilder, SiliconOpts, SiliconOptsBuilder},
     server::ViperServer,
-    verification::VerificationStatus,
 };
+
+pub use crate::verification::VerificationStatus;
 
 #[derive(Debug)]
 pub struct Client {
@@ -130,6 +131,16 @@ impl VerificationRequest {
 }
 
 impl SiliconOptsBuilder {
+    /// Try to detect `z3` from `PATH` using `which z3`
+    pub fn detect_z3(&mut self) -> Result<&mut Self> {
+        let z3 = String::from_utf8(
+            std::process::Command::new("which")
+                .arg("z3")
+                .output()?
+                .stdout,
+        )?;
+        Ok(self.z3_exe(z3))
+    }
     pub fn verify_file(&self, file: impl AsRef<Path>) -> Result<VerificationRequest> {
         Ok(VerificationRequest::Silicon {
             opts: Box::new(self.build()?),
@@ -138,6 +149,16 @@ impl SiliconOptsBuilder {
     }
 }
 impl CarbonOptsBuilder {
+    /// Try to detect `z3` from `PATH` using `which z3`
+    pub fn detect_z3(&mut self) -> Result<&mut Self> {
+        let z3 = String::from_utf8(
+            std::process::Command::new("which")
+                .arg("z3")
+                .output()?
+                .stdout,
+        )?;
+        Ok(self.z3_exe(z3))
+    }
     pub fn verify_file(&self, file: impl AsRef<Path>) -> Result<VerificationRequest> {
         Ok(VerificationRequest::Carbon {
             opts: Box::new(self.build()?),
