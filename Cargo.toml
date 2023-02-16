@@ -2,4 +2,10 @@
 authors = ["Oliver Bøving <oliver@bvng.dk>"]
 
 [workspace]
-members = ["server"]
+members = ["server", "silvers"]
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3

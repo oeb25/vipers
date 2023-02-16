@@ -1,3 +1,4 @@
 tmp/
 .metals/
 target/
+*.pending-snap
