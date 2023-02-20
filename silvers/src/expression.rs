@@ -236,7 +236,7 @@ pub struct Trigger {
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum AbstractLocalVar {
-    LocalVar,
+    LocalVar(LocalVar),
     #[display(fmt = "result")]
     Result {
         typ: Type,
