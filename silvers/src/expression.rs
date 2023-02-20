@@ -67,6 +67,7 @@ pub enum Exp {
         body: ExpR,
     },
     Quantifier(QuantifierExp),
+    AbstractLocalVar(AbstractLocalVar),
     Seq(SeqExp),
     Set(SetExp),
     Multiset(MultisetExp),
