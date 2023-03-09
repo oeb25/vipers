@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use derive_more::Display;
+use derive_new::new;
 
 use crate::{
     fmt::{comma, spaced},
@@ -24,6 +25,8 @@ pub enum Exp {
         exp: ExpR,
     },
     MagicWand(MagicWand),
+    Literal(Literal),
+    AccessPredicate(AccessPredicate),
     Perm(PermExp),
     #[display(fmt = "{funcname}({})", "comma(args)")]
     FuncApp {
@@ -60,7 +63,7 @@ pub enum Exp {
         body: ExpR,
     },
     Old(OldExp),
-    #[display(fmt = "(let {variable} = {exp} in {body})")]
+    #[display(fmt = "(let {variable} == ({exp}) in {body})")]
     Let {
         variable: LocalVarDecl,
         exp: ExpR,
@@ -74,7 +77,7 @@ pub enum Exp {
     Map(MapExp),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "({left} --* {right})")]
 pub struct MagicWand {
     pub left: ExpR,
@@ -82,7 +85,22 @@ pub struct MagicWand {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
-#[display(fmt = "{loc}({perm})")]
+pub enum AccessPredicate {
+    #[display(fmt = "acc({_0})")]
+    Field(FieldAccessPredicate),
+    #[display(fmt = "acc({_0})")]
+    Predicate(PredicateAccessPredicate),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[display(fmt = "{loc}, {perm}")]
+pub struct FieldAccessPredicate {
+    pub loc: PredicateAccess,
+    pub perm: ExpR,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[display(fmt = "{loc}, {perm}")]
 pub struct PredicateAccessPredicate {
     pub loc: PredicateAccess,
     pub perm: ExpR,
@@ -137,7 +155,7 @@ pub enum PermExp {
     No,
     #[display(fmt = "epsilon")]
     Epsilon,
-    #[display(fmt = "({left} {op} {right}")]
+    #[display(fmt = "({left} {op} {right})")]
     Bin {
         op: PermOp,
         left: PermExpR,
@@ -185,18 +203,18 @@ pub enum LocationAccess {
     Predicate(PredicateAccess),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "{rcr}.{field}")]
 pub struct FieldAccess {
     pub rcr: ExpR,
     pub field: Field,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "{predicate_name}({})", "comma(args)")]
 pub struct PredicateAccess {
-    pub args: Vec<ExpR>,
     pub predicate_name: String,
+    pub args: Vec<ExpR>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
@@ -229,7 +247,7 @@ pub enum QuantifierExp {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "[{}]", "comma(exprs)")]
 pub struct Trigger {
     pub exprs: Vec<ExpR>,
@@ -244,7 +262,7 @@ pub enum AbstractLocalVar {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "{name}")]
 pub struct LocalVar {
     pub name: String,
@@ -340,7 +358,7 @@ pub enum MapExp {
     Range { base: ExpR },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
 #[display(fmt = "{key} := {value}")]
 pub struct Maplet {
     key: ExpR,
@@ -353,4 +371,115 @@ pub enum Literal {
     #[display(fmt = "null")]
     Null,
     Int(i64),
+}
+
+impl Exp {
+    pub fn boolean(b: bool) -> Exp {
+        Exp::Literal(Literal::Boolean(b))
+    }
+    pub fn null() -> Exp {
+        Exp::Literal(Literal::Null)
+    }
+    pub fn int(v: i64) -> Exp {
+        Exp::Literal(Literal::Int(v))
+    }
+
+    pub fn add(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Add,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn sub(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Sub,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn mul(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Mul,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn div(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Div,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn modulo(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Mod,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn lt_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::LtCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn le_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::LeCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn gt_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::GtCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn ge_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::GeCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn eq_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::EqCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn ne_cmp(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::NeCmp,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn or(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Or,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn and(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::And,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
+    pub fn implies(self, rhs: impl Into<Box<Self>>) -> Self {
+        Exp::Bin {
+            op: BinOp::Implies,
+            left: Box::new(self),
+            right: rhs.into(),
+        }
+    }
 }

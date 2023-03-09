@@ -45,3 +45,24 @@ pub enum AtomicType {
 pub struct TypeVar {
     pub name: String,
 }
+
+impl Type {
+    pub fn int() -> Type {
+        Type::Atomic(AtomicType::Int)
+    }
+    pub fn bool() -> Type {
+        Type::Atomic(AtomicType::Bool)
+    }
+    pub fn perm() -> Type {
+        Type::Atomic(AtomicType::Perm)
+    }
+    pub fn ref_() -> Type {
+        Type::Atomic(AtomicType::Ref)
+    }
+    pub fn internal_type() -> Type {
+        Type::Atomic(AtomicType::InternalType)
+    }
+    pub fn wand() -> Type {
+        Type::Atomic(AtomicType::Wand)
+    }
+}

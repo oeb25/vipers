@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use derive_more::Display;
+use derive_new::new;
 use itertools::Either;
 
 use crate::{
@@ -23,8 +24,16 @@ pub struct Program {
 impl std::fmt::Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", lined(&self.domains))?;
-        write!(f, "{}", lined(&self.fields))?;
-        write!(f, "{}", lined(&self.functions))?;
+        write!(
+            f,
+            "{}",
+            lined(
+                self.fields
+                    .iter()
+                    .map(|f| format!("field {}: {}", f.name, f.typ))
+            )
+        )?;
+        writeln!(f, "{}", lined(&self.functions))?;
         write!(f, "{}", lined(&self.predicates))?;
         write!(f, "{}", lined(&self.methods))?;
         write!(f, "{}", lined(&self.extensions))?;
@@ -71,8 +80,9 @@ pub struct DomainAxiom {
     pub exp: Exp,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
-#[display(fmt = "{name}: {typ}")]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
+// #[display(fmt = "{name}: {typ}")]
+#[display(fmt = "{name}")]
 pub struct Field {
     pub name: String,
     pub typ: Type,
@@ -80,7 +90,7 @@ pub struct Field {
 
 fn opt_body<T: std::fmt::Display>(e: &Option<T>) -> impl std::fmt::Display {
     if let Some(body) = e {
-        Either::Left(indent(format!("\n{{ {body} }}")))
+        Either::Left(format!("\n{{\n{}\n}}", indent(body)))
     } else {
         Either::Right("")
     }
@@ -113,11 +123,10 @@ pub struct Predicate {
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 #[display(
-    fmt = "method {name}({}) returns ({})\n{}\n{}{}",
+    fmt = "method {name}({}) returns ({})\n{}{}",
     "comma(formal_args)",
     "comma(formal_returns)",
-    "indented(prefixed(\"requires \", pres))",
-    "indented(prefixed(\"ensures  \", posts))",
+    "indented(prefixed(\"requires \", pres).chain(prefixed(\"ensures  \", posts)))",
     "opt_body(body)"
 )]
 pub struct Method {
@@ -132,8 +141,8 @@ pub struct Method {
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub struct ExtensionMember {}
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
-#[display(fmt = "var {name}: {typ}")]
+#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
+#[display(fmt = "{name}: {typ}")]
 pub struct LocalVarDecl {
     pub name: String,
     pub typ: Type,

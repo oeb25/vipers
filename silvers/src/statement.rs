@@ -87,7 +87,7 @@ pub enum Stmt {
         els: Seqn,
     },
     #[display(
-        fmt = "while ({cond}) \n{} {{\n{}\n}}",
+        fmt = "while ({cond}) \n{}\n{{\n{}\n}}",
         "indent(lined(prefixed(\"invariant \", invs)))",
         "indent(body)"
     )]
@@ -101,6 +101,7 @@ pub enum Stmt {
     Goto {
         target: String,
     },
+    #[display(fmt = "var {decl}")]
     LocalVarDeclStmt {
         decl: LocalVarDecl,
     },
