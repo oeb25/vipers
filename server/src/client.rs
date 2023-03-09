@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use color_eyre::{eyre::Context, Result};
 use futures::{Stream, TryStreamExt};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -9,6 +8,8 @@ use tokio_stream::{wrappers::LinesStream, StreamExt};
 use tokio_util::io::StreamReader;
 
 use crate::{
+    error::Result,
+    error::ViperServerError,
     opts::{CarbonOpts, CarbonOptsBuilder, SiliconOpts, SiliconOptsBuilder},
     server::ViperServer,
 };
@@ -27,7 +28,7 @@ impl Client {
         match server.online_at().await {
             Ok(base) => Ok(Self {
                 server,
-                base: base.parse()?,
+                base: Url::parse(&base)?,
             }),
             Err(err) => {
                 let mut stdout = "stdout:".to_string();
@@ -42,7 +43,13 @@ impl Client {
                     stderr += &r;
                 }
 
-                Err(err).wrap_err(stdout).wrap_err(stderr)?
+                Err(ViperServerError::ConnectToServerFailed {
+                    stdout,
+                    stderr,
+                    source: Box::new(err),
+                })
+
+                // Err(err).wrap_err(stdout).wrap_err(stderr)?
             }
         }
     }
@@ -63,7 +70,10 @@ impl Client {
 
         Ok(lines.map(|l| {
             let l = l?;
-            serde_json::from_str(&l).wrap_err(l.to_string())
+            serde_json::from_str(&l).map_err(|source| ViperServerError::ParseJson {
+                json: l.to_string(),
+                source,
+            })
         }))
     }
 
@@ -86,7 +96,10 @@ impl Client {
             .await?;
 
         let s = res.text().await?;
-        serde_json::from_str(&s).wrap_err_with(|| format!("failed to parse response: {s:?}"))
+        serde_json::from_str(&s).map_err(|source| ViperServerError::ParseJson {
+            json: s.to_string(),
+            source,
+        })
     }
 }
 

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, marker::PhantomData, str::FromStr};
 
-use color_eyre::eyre;
 use serde::{de, Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Debug, derive_more::Display, Default, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -107,31 +107,45 @@ pub enum OptionalPosition {
     None,
 }
 
+#[derive(Debug, Error)]
+#[error("expected \"<no position>\" or \"<undefined>\" found {found:?}")]
+pub struct ParseOptionalError {
+    pub found: String,
+}
+
 impl FromStr for OptionalPosition {
-    type Err = eyre::Error;
+    type Err = ParseOptionalError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == "<no position>" || s == "<undefined>" {
             Ok(OptionalPosition::None)
         } else {
-            Err(eyre::eyre!(
-                "expected \"<no position>\" or \"<undefined>\" found {:?}",
-                s
-            ))
+            Err(ParseOptionalError {
+                found: s.to_string(),
+            })
+        }
+    }
+}
+
+impl OptionalPosition {
+    pub fn inner(&self) -> Option<&Position> {
+        match self {
+            OptionalPosition::Some(p) => Some(p),
+            OptionalPosition::None => None,
         }
     }
 }
 
 fn string_or_struct<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
-    T: Deserialize<'de> + FromStr<Err = eyre::Error>,
+    T: Deserialize<'de> + FromStr<Err = ParseOptionalError>,
     D: de::Deserializer<'de>,
 {
     struct StringOrStruct<T>(PhantomData<fn() -> T>);
 
     impl<'de, T> de::Visitor<'de> for StringOrStruct<T>
     where
-        T: Deserialize<'de> + FromStr<Err = eyre::Error>,
+        T: Deserialize<'de> + FromStr<Err = ParseOptionalError>,
     {
         type Value = T;
 

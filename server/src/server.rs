@@ -7,6 +7,7 @@ use tokio::{
     process::{Child, Command},
 };
 
+use crate::error::{Result, ViperServerError};
 use crate::opts::{ViperServerOpts, ViperServerOptsBuilder};
 
 #[derive(
@@ -68,19 +69,13 @@ pub struct ViperServer {
 }
 
 impl ViperServerOptsBuilder {
-    async fn spawn(&self, viper_server_jar: impl AsRef<Path>) -> color_eyre::Result<ViperServer> {
+    async fn spawn(&self, viper_server_jar: impl AsRef<Path>) -> Result<ViperServer> {
         ViperServer::spawn(viper_server_jar, self.build()?).await
     }
-    pub async fn spawn_http(
-        &mut self,
-        viper_server_jar: impl AsRef<Path>,
-    ) -> color_eyre::Result<ViperServer> {
+    pub async fn spawn_http(&mut self, viper_server_jar: impl AsRef<Path>) -> Result<ViperServer> {
         self.server_mode("HTTP").spawn(viper_server_jar).await
     }
-    pub async fn spawn_lsp(
-        &mut self,
-        viper_server_jar: impl AsRef<Path>,
-    ) -> color_eyre::Result<ViperServer> {
+    pub async fn spawn_lsp(&mut self, viper_server_jar: impl AsRef<Path>) -> Result<ViperServer> {
         self.server_mode("LSP").spawn(viper_server_jar).await
     }
 }
@@ -90,15 +85,13 @@ impl ViperServer {
         ViperServerOptsBuilder::default()
     }
 
-    pub async fn spawn(
-        viper_server_jar: impl AsRef<Path>,
-        opts: ViperServerOpts,
-    ) -> color_eyre::Result<Self> {
+    pub async fn spawn(viper_server_jar: impl AsRef<Path>, opts: ViperServerOpts) -> Result<Self> {
+        let viper_server_jar = viper_server_jar.as_ref();
         let mut cmd = Command::new("java");
         cmd.arg("-Xss128m")
             .arg("-Xmx4g")
             .arg("-jar")
-            .arg(viper_server_jar.as_ref());
+            .arg(viper_server_jar);
 
         opts.apply(|a| {
             cmd.arg(a);
@@ -108,7 +101,12 @@ impl ViperServer {
             .stderr(Stdio::piped())
             .kill_on_drop(true);
 
-        let mut child = cmd.spawn()?;
+        let mut child = cmd
+            .spawn()
+            .map_err(|source| ViperServerError::SpawnServer {
+                source,
+                viper_server_jar: viper_server_jar.display().to_string(),
+            })?;
 
         let (stdout_tx, stdout_rx) = tokio::sync::mpsc::unbounded_channel();
         let (stderr_tx, stderr_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -154,14 +152,16 @@ impl ViperServer {
         })
     }
 
-    pub async fn online_at(&mut self) -> color_eyre::Result<String> {
+    pub async fn online_at(&mut self) -> Result<String> {
         match &self.online_at {
             OnlineAt::Waiting(_) => {}
             OnlineAt::Got(url) => return Ok(url.clone()),
             OnlineAt::Errored => todo!(),
         }
         if let OnlineAt::Waiting(rx) = std::mem::replace(&mut self.online_at, OnlineAt::Errored) {
-            let url = rx.await?;
+            let url = rx
+                .await
+                .map_err(|source| ViperServerError::ServerDidNotReportPort { source })?;
             self.online_at = OnlineAt::Got(url.clone());
             Ok(url)
         } else {
