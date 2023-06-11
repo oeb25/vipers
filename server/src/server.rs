@@ -88,6 +88,7 @@ impl ViperServer {
     pub async fn spawn(viper_server_jar: impl AsRef<Path>, opts: ViperServerOpts) -> Result<Self> {
         let viper_server_jar = viper_server_jar.as_ref();
         let mut cmd = Command::new("java");
+        cmd.kill_on_drop(true);
         cmd.arg("-Xss128m")
             .arg("-Xmx4g")
             .arg("-jar")
