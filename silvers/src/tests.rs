@@ -1,5 +1,5 @@
 use crate::{
-    expression::LocalVar,
+    expression::{ExpR, LocalVar},
     program::{Function, Method, Program},
     statement::{Seqn, Stmt},
     typ::{AtomicType, Type},
@@ -7,7 +7,7 @@ use crate::{
 
 #[test]
 fn simple() {
-    let program = Program {
+    let program: Program<ExpR> = Program {
         domains: vec![],
         fields: vec![],
         functions: vec![Function {

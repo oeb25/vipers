@@ -3,7 +3,9 @@ use std::{collections::HashMap, marker::PhantomData, str::FromStr};
 use serde::{de, Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, derive_more::Display, Default, Clone, Copy, Serialize, Deserialize)]
+#[derive(
+    Debug, derive_more::Display, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum Backend {
     #[display(fmt = "carbon")]
@@ -13,7 +15,7 @@ pub enum Backend {
     Silicon,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "msg_type", content = "msg_body")]
 #[serde(rename_all = "snake_case")]
 pub enum VerificationStatus {
@@ -21,6 +23,10 @@ pub enum VerificationStatus {
         text: String,
     },
     WarningsDuringParsing(Vec<serde_json::Value>),
+    WarningsDuringTypechecking(Vec<serde_json::Value>),
+    InternalWarningMessage {
+        text: String,
+    },
     InvalidArgsReport {
         tool: String,
         errors: Vec<DetailsError>,
@@ -66,7 +72,7 @@ pub enum VerificationStatus {
         extra: HashMap<String, serde_json::Value>,
     },
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Details {
     pub cached: Option<bool>,
     pub result: Option<DetailsResult>,
@@ -76,14 +82,14 @@ pub struct Details {
     pub extra: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DetailsResult {
     pub errors: Vec<DetailsError>,
     #[serde(rename = "type")]
     pub result_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Entity {
     pub name: String,
     pub position: Position,
@@ -91,7 +97,7 @@ pub struct Entity {
     pub entity_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DetailsError {
     pub cached: bool,
     #[serde(deserialize_with = "string_or_struct")]
@@ -100,7 +106,7 @@ pub struct DetailsError {
     pub text: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum OptionalPosition {
     Some(Position),
@@ -178,14 +184,14 @@ where
     deserializer.deserialize_any(StringOrStruct(PhantomData))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Position {
     pub end: String,
     pub file: String,
     pub start: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProgramOutlineMember {
     pub name: String,
     pub position: Position,
@@ -193,7 +199,7 @@ pub struct ProgramOutlineMember {
     pub member_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProgramDefinition {
     pub location: Position,
     pub name: String,
@@ -205,14 +211,14 @@ pub struct ProgramDefinition {
     pub verification_status_type: Type,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Type {
     pub name: String,
     #[serde(rename = "viperType")]
     pub viper_type: Option<ViperType>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ViperType {
     pub kind: String,
     // String or Object such as Seq[Int]

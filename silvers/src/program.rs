@@ -1,27 +1,26 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use derive_more::Display;
 use derive_new::new;
 use itertools::Either;
 
 use crate::{
-    expression::Exp,
     fmt::{comma, indent, indented, lined, opt, prefixed},
     statement::Seqn,
     typ::{Type, TypeVar},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Program {
-    pub domains: Vec<Domain>,
+pub struct Program<E> {
+    pub domains: Vec<Domain<E>>,
     pub fields: Vec<Field>,
-    pub functions: Vec<Function>,
-    pub predicates: Vec<Predicate>,
-    pub methods: Vec<Method>,
+    pub functions: Vec<Function<E>>,
+    pub predicates: Vec<Predicate<E>>,
+    pub methods: Vec<Method<E>>,
     pub extensions: Vec<ExtensionMember>,
 }
 
-impl std::fmt::Display for Program {
+impl<E: std::fmt::Display> std::fmt::Display for Program<E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", lined(&self.domains))?;
         write!(
@@ -41,21 +40,22 @@ impl std::fmt::Display for Program {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(
     fmt = "domain {name} {{\n{}\n{}\n}}",
     "indent(lined(functions))",
     "indent(lined(axioms))"
 )]
-pub struct Domain {
+pub struct Domain<E> {
     pub name: String,
     pub functions: Vec<DomainFunc>,
-    pub axioms: Vec<DomainAxiom>,
+    pub axioms: Vec<DomainAxiom<E>>,
     pub typ_vars: Vec<TypeVar>,
-    pub interpretations: Option<HashMap<String, String>>,
+    pub interpretations: Option<BTreeMap<String, String>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
 #[display(fmt = "function {name}({}): {typ}", "comma(formal_args)")]
 pub struct DomainFunc {
     pub name: String,
@@ -65,22 +65,23 @@ pub struct DomainFunc {
     pub interpretation: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
 pub enum AnyLocalVarDecl {
     #[display(fmt = "_: {typ}")]
     UnnamedLocalVarDecl { typ: Type },
-    #[display(fmt = "{name}: {typ}")]
-    LocalVarDecl { name: String, typ: Type },
+    #[display(fmt = "{_0}")]
+    LocalVarDecl(LocalVarDecl),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(fmt = "axiom {} {{ {exp} }}", "opt(name)")]
-pub struct DomainAxiom {
+pub struct DomainAxiom<E> {
     pub name: Option<String>,
-    pub exp: Exp,
+    pub exp: E,
 }
 
-#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Display)]
 // #[display(fmt = "{name}: {typ}")]
 #[display(fmt = "{name}")]
 pub struct Field {
@@ -96,7 +97,8 @@ fn opt_body<T: std::fmt::Display>(e: &Option<T>) -> impl std::fmt::Display {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(
     fmt = "function {name}({}): {typ}\n{}\n{}{}",
     "comma(formal_args)",
@@ -104,24 +106,26 @@ fn opt_body<T: std::fmt::Display>(e: &Option<T>) -> impl std::fmt::Display {
     "indented(prefixed(\"ensures  \", posts))",
     "opt_body(body)"
 )]
-pub struct Function {
+pub struct Function<E> {
     pub name: String,
     pub formal_args: Vec<LocalVarDecl>,
     pub typ: Type,
-    pub pres: Vec<Exp>,
-    pub posts: Vec<Exp>,
-    pub body: Option<Exp>,
+    pub pres: Vec<E>,
+    pub posts: Vec<E>,
+    pub body: Option<E>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(fmt = "predicate {name}({}){}", "comma(formal_args)", "opt_body(body)")]
-pub struct Predicate {
+pub struct Predicate<E> {
     pub name: String,
     pub formal_args: Vec<LocalVarDecl>,
-    pub body: Option<Exp>,
+    pub body: Option<E>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(
     fmt = "method {name}({}) returns ({})\n{}{}",
     "comma(formal_args)",
@@ -129,19 +133,19 @@ pub struct Predicate {
     "indented(prefixed(\"requires \", pres).chain(prefixed(\"ensures  \", posts)))",
     "opt_body(body)"
 )]
-pub struct Method {
+pub struct Method<E> {
     pub name: String,
     pub formal_args: Vec<LocalVarDecl>,
     pub formal_returns: Vec<LocalVarDecl>,
-    pub pres: Vec<Exp>,
-    pub posts: Vec<Exp>,
-    pub body: Option<Seqn>,
+    pub pres: Vec<E>,
+    pub posts: Vec<E>,
+    pub body: Option<Seqn<E>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
 pub struct ExtensionMember {}
 
-#[derive(new, Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Display)]
 #[display(fmt = "{name}: {typ}")]
 pub struct LocalVarDecl {
     pub name: String,

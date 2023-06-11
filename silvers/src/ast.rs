@@ -3,11 +3,11 @@ use crate::{
     statement::Label,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Declaration {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Declaration<E> {
     LocalVar(AnyLocalVarDecl),
     /// Has to be named
-    DomainAxiom(DomainAxiom),
+    DomainAxiom(DomainAxiom<E>),
     DomainFunc(DomainFunc),
-    Label(Label),
+    Label(Label<E>),
 }

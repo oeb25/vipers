@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use derive_more::Display;
 
 type TypeR = Box<Type>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
 pub enum Type {
     Atomic(AtomicType),
     #[display(fmt = "Seq[{element_type}]")]
@@ -24,10 +24,10 @@ pub enum Type {
         key_type: TypeR,
         value_type: TypeR,
     },
-    #[display(fmt = "{domain_name}[??]")]
+    #[display(fmt = "{domain_name}[]")]
     Domain {
         domain_name: String,
-        partial_typ_vars_map: HashMap<TypeVar, TypeR>,
+        partial_typ_vars_map: BTreeMap<TypeVar, TypeR>,
     },
 }
 

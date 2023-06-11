@@ -1,21 +1,32 @@
 use derive_more::Display;
+use derive_new::new;
 
 use crate::{
     ast::Declaration,
-    expression::{Exp, FieldAccess, LocalVar, MagicWand, PredicateAccessPredicate, ResourceAccess},
+    expression::{FieldAccess, LocalVar, MagicWand, PredicateAccessPredicate, ResourceAccess},
     fmt::{comma, indent, lined, prefixed},
     program::{Field, LocalVarDecl},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Display)]
+#[display(bound = "E: std::fmt::Display")]
 #[display(fmt = "{}", "lined(ss)")]
-pub struct Seqn {
-    pub ss: Vec<Stmt>,
-    pub scoped_seqn_declarations: Vec<Declaration>,
+pub struct Seqn<E> {
+    pub ss: Vec<Stmt<E>>,
+    pub scoped_seqn_declarations: Vec<Declaration<E>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
-pub enum Stmt {
+impl<E> Default for Seqn<E> {
+    fn default() -> Self {
+        Self {
+            ss: Default::default(),
+            scoped_seqn_declarations: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
+pub enum Stmt<E> {
     #[display(fmt = "{lhs} := new({})", "comma(fields)")]
     NewStmt {
         lhs: LocalVar,
@@ -24,12 +35,12 @@ pub enum Stmt {
     #[display(fmt = "{lhs} := {rhs}")]
     LocalVarAssign {
         lhs: LocalVar,
-        rhs: Exp,
+        rhs: E,
     },
     #[display(fmt = "{lhs} := {rhs}")]
     FieldAssign {
-        lhs: FieldAccess,
-        rhs: Exp,
+        lhs: FieldAccess<E>,
+        rhs: E,
     },
     #[display(
         fmt = "{}{method_name}({})",
@@ -38,53 +49,53 @@ pub enum Stmt {
     )]
     MethodCall {
         method_name: String,
-        args: Vec<Exp>,
+        args: Vec<E>,
         targets: Vec<LocalVar>,
     },
     #[display(fmt = "exhale {exp}")]
     Exhale {
-        exp: Exp,
+        exp: E,
     },
     #[display(fmt = "inhale {exp}")]
     Inhale {
-        exp: Exp,
+        exp: E,
     },
     #[display(fmt = "assert {exp}")]
     Assert {
-        exp: Exp,
+        exp: E,
     },
     #[display(fmt = "assume {exp}")]
     Assume {
-        exp: Exp,
+        exp: E,
     },
     #[display(fmt = "fold {acc}")]
     Fold {
-        acc: PredicateAccessPredicate,
+        acc: PredicateAccessPredicate<E>,
     },
     #[display(fmt = "unfold {acc}")]
     Unfold {
-        acc: PredicateAccessPredicate,
+        acc: PredicateAccessPredicate<E>,
     },
     #[display(fmt = "package?")]
     Package {
-        wand: MagicWand,
-        proof_script: Seqn,
+        wand: MagicWand<E>,
+        proof_script: Seqn<E>,
     },
     #[display(fmt = "apply {exp}")]
     Apply {
-        exp: MagicWand,
+        exp: MagicWand<E>,
     },
     #[display(fmt = "{}", "indent(_0)")]
-    Seqn(Seqn),
+    Seqn(Seqn<E>),
     #[display(
         fmt = "if ({cond}) {{\n{}\n}} else {{\n{}\n}}",
         "indent(thn)",
         "indent(els)"
     )]
     If {
-        cond: Exp,
-        thn: Seqn,
-        els: Seqn,
+        cond: E,
+        thn: Seqn<E>,
+        els: Seqn<E>,
     },
     #[display(
         fmt = "while ({cond}) \n{}\n{{\n{}\n}}",
@@ -92,11 +103,11 @@ pub enum Stmt {
         "indent(body)"
     )]
     While {
-        cond: Exp,
-        invs: Vec<Exp>,
-        body: Seqn,
+        cond: E,
+        invs: Vec<E>,
+        body: Seqn<E>,
     },
-    Label(Label),
+    Label(Label<E>),
     #[display(fmt = "goto {target}")]
     Goto {
         target: String,
@@ -107,21 +118,21 @@ pub enum Stmt {
     },
     #[display(fmt = "Quasihavoc?")]
     Quasihavoc {
-        lhs: Option<Exp>,
-        exp: ResourceAccess,
+        lhs: Option<E>,
+        exp: ResourceAccess<E>,
     },
     #[display(fmt = "Quasihavocall?")]
     Quasihavocall {
         vars: Vec<LocalVarDecl>,
-        lhs: Option<Exp>,
-        exp: ResourceAccess,
+        lhs: Option<E>,
+        exp: ResourceAccess<E>,
     },
-    Expression(Exp),
+    Expression(E),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(new, Debug, Clone, PartialEq, Eq, Hash, Display)]
 #[display(fmt = "label {name}")]
-pub struct Label {
+pub struct Label<E> {
     pub name: String,
-    pub invs: Vec<Exp>,
+    pub invs: Vec<E>,
 }
