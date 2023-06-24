@@ -3,6 +3,7 @@ authors = ["Oliver Bøving <oliver@bvng.dk>"]
 
 [workspace]
 members = ["server", "silvers"]
+resolver = "2"
 
 [profile.dev.package.insta]
 opt-level = 3

@@ -1,10 +1,11 @@
 use std::{path::Path, process::Stdio};
 
+use command_group::{AsyncCommandGroup, AsyncGroupChild};
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
-    process::{Child, Command},
+    process::Command,
 };
 
 use crate::error::{Result, ViperServerError};
@@ -62,7 +63,7 @@ enum OnlineAt {
 #[derive(Debug)]
 pub struct ViperServer {
     #[allow(unused)]
-    child: Child,
+    child: AsyncGroupChild,
     online_at: OnlineAt,
     pub stdout: tokio::sync::mpsc::UnboundedReceiver<String>,
     pub stderr: tokio::sync::mpsc::UnboundedReceiver<String>,
@@ -103,7 +104,7 @@ impl ViperServer {
             .kill_on_drop(true);
 
         let mut child = cmd
-            .spawn()
+            .group_spawn()
             .map_err(|source| ViperServerError::SpawnServer {
                 source,
                 viper_server_jar: viper_server_jar.display().to_string(),
@@ -112,8 +113,9 @@ impl ViperServer {
         let (stdout_tx, stdout_rx) = tokio::sync::mpsc::unbounded_channel();
         let (stderr_tx, stderr_rx) = tokio::sync::mpsc::unbounded_channel();
 
-        let stdout = child.stdout.take().unwrap();
-        let stderr = child.stderr.take().unwrap();
+        let inner_child = child.inner();
+        let stdout = inner_child.stdout.take().unwrap();
+        let stderr = inner_child.stderr.take().unwrap();
 
         let (online_at_tx, online_at_rx) = tokio::sync::oneshot::channel::<String>();
 
