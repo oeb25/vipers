@@ -224,3 +224,19 @@ pub struct ViperType {
     // String or Object such as Seq[Int]
     pub typename: serde_json::Value,
 }
+
+impl VerificationStatus {
+    pub fn details(&self) -> Option<&Details> {
+        match self {
+            VerificationStatus::AstConstructionResult { details, .. }
+            | VerificationStatus::VerificationResult { details, .. } => Some(details),
+            _ => None,
+        }
+    }
+    pub fn detail_errors(&self) -> impl Iterator<Item = &DetailsError> {
+        self.details()
+            .into_iter()
+            .flat_map(|d| &d.result)
+            .flat_map(|res| &res.errors)
+    }
+}

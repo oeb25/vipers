@@ -43,5 +43,11 @@ fn simple() {
     insta::assert_display_snapshot!(program, @r###"
     function fib(): Int
 
+
+    method fac() returns ()
+
+    {
+      x := fac()
+    }
     "###);
 }
