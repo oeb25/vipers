@@ -340,7 +340,7 @@ pub enum SetBinOp {
     Subset,
     #[display(fmt = "setminus")]
     Minus,
-    #[display(fmt = "contains")]
+    #[display(fmt = "in")]
     Contains,
 }
 
