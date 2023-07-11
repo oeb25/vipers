@@ -167,6 +167,8 @@ pub enum PermExp<E> {
     },
     #[display(fmt = "current({res})")]
     Current { res: ResourceAccess<E> },
+    #[display(fmt = "{_0}")]
+    Exp(E),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Display)]
 pub enum PermOp {

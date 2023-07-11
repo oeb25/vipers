@@ -52,6 +52,11 @@ pub enum VerificationStatus {
         message: String,
         stacktrace: Vec<String>,
     },
+    QuantifierChosenTriggersMessage {
+        quantifier: String,
+        quantifier_type: String,
+        triggers: Vec<Vec<String>>,
+    },
     ConfigurationConfirmation {
         text: String,
     },
@@ -70,6 +75,9 @@ pub enum VerificationStatus {
         tool: Backend,
         #[serde(flatten)]
         extra: HashMap<String, serde_json::Value>,
+    },
+    VerificationTerminationMessage {
+        msg: String,
     },
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
